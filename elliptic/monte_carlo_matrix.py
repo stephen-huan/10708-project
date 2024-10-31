@@ -1,11 +1,5 @@
-from pathlib import Path
-
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv, norm
-
-figures = Path(__file__).parent.parent / "figures"
-figures.mkdir(parents=True, exist_ok=True)
 
 
 def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
@@ -26,7 +20,7 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
 
     N = int(min(1000, ((0.5 / epsilon) / (1 - C_norm)) ** 2))
     # int(((0.6745 / epsilon) * (1/(1 - norm_C))) ** 2)
-    print("N", N)
+    # print("N", N)
 
     # Initialize Q as zero matrix
     Q = np.zeros_like(B, dtype=float)
@@ -44,7 +38,7 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
             tk = 0  # Stopping rule
 
             # Generate random walk for each chain
-            for step in range(max_steps):
+            for _ in range(max_steps):
                 # Compute transition probabilities
                 row_abs_sum = np.sum(np.abs(C[current_state]))
                 if row_abs_sum == 0:
@@ -72,7 +66,7 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
             # Update the sum for the ith row
             Q[i] += sum_i / chain_idx
 
-        # Calculate and store L2 loss for convergence after all rows are updated
+        # Calculate L2 loss for convergence after all rows are updated
         l2_loss = np.linalg.norm(Q - Q_prev)
         l2_losses.append(l2_loss)
         Q_prev = Q.copy()
@@ -92,29 +86,3 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
     B_inv = Q_n
 
     return B_inv, l2_losses
-
-
-def simple_example(show: bool=False) -> None:
-    """Very simple test matrix and convergence plot."""
-    # Very simple test matrix B
-    B = np.array([[2, -1], [-1, 2]])
-
-    # Run the Monte Carlo matrix inversion and track convergence
-    _, l2_losses = monte_carlo_matrix_inversion(B, max_steps=100)
-
-    # Plot L2 loss for convergence across the number of random walks
-    plt.plot(range(1, len(l2_losses) + 1), l2_losses, marker="o")
-    plt.gcf().set_size_inches(15, 6)
-    plt.xlabel("Number of Random Walks")
-    plt.ylabel("L2 Loss")
-    plt.title("Convergence of Monte Carlo Matrix Inversion")
-    plt.grid(True)
-    if show:
-        plt.show()
-    plt.savefig(figures / "monte_carlo.png")
-    plt.savefig(figures / "monte_carlo.pdf")
-
-
-if __name__ == "__main__":
-    # Run the simple example
-    simple_example()
