@@ -3,3 +3,4 @@ result
 .ipynb_checkpoints/
 __pycache__/
 *.pyc
+matplotlibrc

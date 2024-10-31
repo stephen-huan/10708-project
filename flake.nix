@@ -17,6 +17,7 @@
           jax
           jaxlib
           notebook
+          pycairo
           seaborn
         ]);
         formatters = [ pkgs.black pkgs.isort pkgs.nixpkgs-fmt ];
