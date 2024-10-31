@@ -21,9 +21,9 @@ def simple_example(show: bool = False) -> None:
     # Plot L2 loss for convergence across the number of random walks
     ax = sns.lineplot(x=range(1, len(l2_losses) + 1), y=l2_losses, marker="o")
     ax.set_yscale("log")
-    ax.set_xlabel("Number of Random Walks")
-    ax.set_ylabel("L2 Loss")
-    ax.set_title("Convergence of Monte Carlo Matrix Inversion")
+    ax.set_xlabel("Number of random walks")
+    ax.set_ylabel("L2 loss")
+    ax.set_title("Convergence of Monte Carlo matrix inversion")
     if show:
         plt.show()
     ax.figure.savefig(figures / "monte_carlo.png")  # pyright: ignore
