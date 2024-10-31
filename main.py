@@ -10,9 +10,10 @@ from pathlib import Path
 
 import jax
 import jax.numpy as jnp
-import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 from jax import random
-from matplotlib import pyplot as plt
 
 from elliptic import gauss_seidel, jacobi
 from elliptic.utils import initialize_solution, relative_l2_loss
@@ -33,68 +34,58 @@ if __name__ == "__main__":
     solution = initialize_solution(n, boundaries)
 
     # run Gauss-Seidel
-    tic = time.time()
     solution = gauss_seidel(solution, n_iters)
-    toc = time.time()
 
-    print(f"Gauss Seidel took {toc - tic} seconds to run {n_iters} iterations")
-    ground_truth = np.copy(solution)
+    ground_truth = jnp.copy(solution)
 
-    plt.imshow(solution)
-    plt.savefig(figures / "pde.png")
-    plt.savefig(figures / "pde.pdf")
+    ax = sns.heatmap(
+        data=solution, xticklabels=False, yticklabels=False, cmap="viridis"
+    )
+    ax.figure.savefig(figures / "pde.png")  # pyright: ignore
+    ax.figure.savefig(figures / "pde.pdf")  # pyright: ignore
+    ax.figure.clear()  # pyright: ignore
 
     # experiment with runtimes and accuracies
 
-    # Jacobi
-    iterations = [100, 200, 400, 800, 1600, 3200]
-    jacobi_runtimes = []
-    jacobi_accuracies = []
+    data = {"iterations": [], "runtime": [], "accuracy": [], "method": []}
+    methods = [
+        ("Jacobi", jacobi),
+        ("Gauss-Seidel", gauss_seidel),
+    ]
 
+    iterations = 100 * 2 ** jnp.arange(6)
     for n_iters in iterations:
-        solution = initialize_solution(n, boundaries)
-        tic = time.time()
-        solution = jacobi(solution, n_iters)
-        toc = time.time()
-        jacobi_runtimes.append(toc - tic)
-        jacobi_accuracies.append(relative_l2_loss(solution, ground_truth))
-        print(
-            f"Jacobi took {toc - tic} seconds to run {n_iters} "
-            + f"iterations with relative L2 loss {jacobi_accuracies[-1]}"
-        )
+        for method_name, method in methods:
+            solution = initialize_solution(n, boundaries)
+            # remove jit compilation
+            method(jnp.copy(solution), n_iters).block_until_ready()
+            tic = time.time()
+            solution = method(solution, n_iters).block_until_ready()
+            toc = time.time()
+            data["iterations"].append(int(n_iters))
+            data["runtime"].append(toc - tic)
+            data["accuracy"].append(
+                float(relative_l2_loss(solution, ground_truth))
+            )
+            data["method"].append(method_name)
 
-    # Gauss-Seidel
-    gauss_seidel_runtimes = []
-    gauss_seidel_accuracies = []
+    data = pd.DataFrame(data)
 
-    for n_iters in iterations:
-        solution = initialize_solution(n, boundaries)
-        tic = time.time()
-        solution = gauss_seidel(solution, n_iters)
-        toc = time.time()
-        gauss_seidel_runtimes.append(toc - tic)
-        gauss_seidel_accuracies.append(
-            relative_l2_loss(solution, ground_truth)
-        )
-        print(
-            f"Gauss-Seidel took {toc - tic} seconds to run {n_iters} "
-            + f"iterations with relative L2 loss {gauss_seidel_accuracies[-1]}"
-        )
+    ax = sns.lineplot(data=data, x="iterations", y="runtime", hue="method")
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.set_title("Runtime")
+    ax.set_xlabel("Iterations")
+    ax.set_ylabel("Runtime (s)")
+    ax.figure.savefig(figures / "runtime.png")  # pyright: ignore
+    ax.figure.savefig(figures / "runtime.pdf")  # pyright: ignore
+    ax.figure.clear()  # pyright: ignore
 
-    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
-
-    axs[0].plot(iterations, jacobi_runtimes, label="Jacobi")
-    axs[0].plot(iterations, gauss_seidel_runtimes, label="Gauss Seidel")
-    axs[0].set_title("Runtimes")
-    axs[0].set_xlabel("Iterations")
-    axs[0].set_ylabel("Runtime (s)")
-    axs[0].legend()
-
-    axs[1].plot(iterations, jacobi_accuracies, label="Jacobi")
-    axs[1].plot(iterations, gauss_seidel_accuracies, label="Gauss Seidel")
-    axs[1].set_title("Relative L2 Loss")
-    axs[1].set_xlabel("Iterations")
-    axs[1].set_ylabel("Relative L2 Loss")
-    axs[1].legend()
-    plt.savefig(figures / "runtime_loss.png")
-    plt.savefig(figures / "runtime_loss.pdf")
+    ax = sns.lineplot(data=data, x="iterations", y="accuracy", hue="method")
+    ax.set_yscale("log")
+    ax.set_title("Relative L2 loss")
+    ax.set_xlabel("Iterations")
+    ax.set_ylabel("Relative L2 loss")
+    plt.savefig(figures / "loss.png")
+    plt.savefig(figures / "loss.pdf")
+    ax.figure.clear()  # pyright: ignore
