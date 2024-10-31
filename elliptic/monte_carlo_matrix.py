@@ -4,9 +4,10 @@
 # In[17]:
 
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from numpy.linalg import inv, norm
+
 
 def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
     n = B.shape[0]
@@ -24,7 +25,7 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
     if C_norm >= 1:
         raise ValueError("Norm condition not satisfied, ||C|| must be < 1")
 
-    N =  int(min(1000, ((0.5 / epsilon) / (1 - C_norm)) ** 2))
+    N = int(min(1000, ((0.5 / epsilon) / (1 - C_norm)) ** 2))
     # int(((0.6745 / epsilon) * (1/(1 - norm_C))) ** 2)
     print("N", N)
 
@@ -56,7 +57,10 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
                 # If C[current_state, next_state] != 0, proceed
                 if C[current_state, next_state] != 0:
                     # Update weight W and accumulate sum
-                    W *= C[current_state, next_state] / probabilities[next_state]
+                    W *= (
+                        C[current_state, next_state]
+                        / probabilities[next_state]
+                    )
                     sum_i[next_state] += W
 
                     # Update state and check stopping conditions
@@ -81,33 +85,33 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
     # Step 5: Iterative update for Q_n
     for i in range(n - 1, -1, -1):
         K_i = B - np.diag(np.diag(B))
-        Q_n = Q_n + np.dot(np.dot(Q_n, K_i), Q_n) / (1 - np.trace(np.dot(K_i, Q_n)))
+        Q_n = Q_n + np.dot(np.dot(Q_n, K_i), Q_n) / (
+            1 - np.trace(np.dot(K_i, Q_n))
+        )
 
     # Step 6: Set B_n^-1 = Q_n
     B_inv = Q_n
 
     return B_inv, l2_losses
 
+
 # Example: Very Simple Test Matrix and Convergence Plot
 def simple_example():
     # Very simple test matrix B
-    B = np.array([
-        [2, -1],
-        [-1, 2]
-    ])
+    B = np.array([[2, -1], [-1, 2]])
 
     # Run the Monte Carlo matrix inversion and track convergence
     _, l2_losses = monte_carlo_matrix_inversion(B, max_steps=100)
 
     # Plot L2 loss for convergence across the number of random walks
-    plt.plot(range(1, len(l2_losses) + 1), l2_losses, marker='o')
+    plt.plot(range(1, len(l2_losses) + 1), l2_losses, marker="o")
     plt.gcf().set_size_inches(15, 6)
-    plt.xlabel('Number of Random Walks')
-    plt.ylabel('L2 Loss')
-    plt.title('Convergence of Monte Carlo Matrix Inversion')
+    plt.xlabel("Number of Random Walks")
+    plt.ylabel("L2 Loss")
+    plt.title("Convergence of Monte Carlo Matrix Inversion")
     plt.grid(True)
     plt.show()
 
+
 # Run the simple example
 simple_example()
-
