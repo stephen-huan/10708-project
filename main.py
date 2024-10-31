@@ -8,21 +8,28 @@ https://surface.syr.edu/cgi/viewcontent.cgi?article=1160&context=eecs_techreport
 import time
 from pathlib import Path
 
+import jax
+import jax.numpy as jnp
 import numpy as np
+from jax import random
 from matplotlib import pyplot as plt
 
 from elliptic import gauss_seidel, jacobi
 from elliptic.utils import initialize_solution, relative_l2_loss
 
+# enable int64/float64
+jax.config.update("jax_enable_x64", True)
+rng = random.key(0)
+
 figures = Path(__file__).parent / "figures"
 figures.mkdir(parents=True, exist_ok=True)
 
 if __name__ == "__main__":
-    # Use Gauss-Seidel with a large grid size and
+    # use Gauss-Seidel with a large grid size and
     # n_iters to get a good ground truth accuracy
     n = 100
     n_iters = 5000
-    boundaries = [0, 0, 100, 0]  # [top, bottom, left, right]
+    boundaries = jnp.array([0, 0, 100, 0])  # [top, bottom, left, right]
     solution = initialize_solution(n, boundaries)
 
     # run Gauss-Seidel
@@ -33,6 +40,7 @@ if __name__ == "__main__":
     print(f"Gauss Seidel took {toc - tic} seconds to run {n_iters} iterations")
     ground_truth = np.copy(solution)
 
+    plt.imshow(solution)
     plt.savefig(figures / "pde.png")
     plt.savefig(figures / "pde.pdf")
 
