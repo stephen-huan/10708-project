@@ -47,7 +47,7 @@ def initialize_solution(n: int, boundaries: Array | None = None) -> Array:
     return solution
 
 
-@jit
+@partial(jit, donate_argnums=0)
 def jacobi(x: Array, n_iters: int = 1) -> Array:
     """Jacobi method for solving an elliptic PDE."""
     n, m = x.shape
@@ -71,7 +71,7 @@ def jacobi(x: Array, n_iters: int = 1) -> Array:
     return lax.fori_loop(0, n_iters, body_fun, x)
 
 
-@jit
+@partial(jit, donate_argnums=0)
 def gauss_seidel(x: Array, n_iters: int = 1) -> Array:
     """Gauss-Seidel method for solving an elliptic PDE."""
     n, m = x.shape
