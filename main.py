@@ -1,17 +1,20 @@
-#!/usr/bin/env python
-# coding: utf-8
+"""
+Solving the Laplace equation using finite differences, implementing
+the Jacobi and Gauss-Seidel methods. Better ones definitely exist!
 
-# ## Solving Laplace Equation using Finite Differences
-# Implementing Jacobi and Gauss-Seidel Method. Better ones definitely exist! https://surface.syr.edu/cgi/viewcontent.cgi?article=1160&context=eecs_techreports
-
-# In[2]:
-
+https://surface.syr.edu/cgi/viewcontent.cgi?article=1160&context=eecs_techreports
+"""
 
 import time
+from pathlib import Path
 
 import numpy as np
 from matplotlib import pyplot as plt
-from numerical_utils import gauss_seidel, initialize_solution
+
+from elliptic.utils import gauss_seidel, initialize_solution
+
+figures = Path(__file__).parent / "figures"
+figures.mkdir(parents=True, exist_ok=True)
 
 # Use Gauss seidel w/ large grid size and n_iters to get a good ground truth accuracy
 n = 100
@@ -32,12 +35,14 @@ ground_truth = np.copy(solution)
 
 
 plt.imshow(solution)
+plt.savefig(figures / "pde.png")
+plt.savefig(figures / "pde.pdf")
 
 
 # In[5]:
 
 
-from numerical_utils import jacobi, relative_l2_loss
+from elliptic.utils import jacobi, relative_l2_loss
 
 # Experiment with runtimes and accuracies
 
@@ -96,3 +101,5 @@ axs[1].set_title("Relative L2 Loss")
 axs[1].set_xlabel("Iterations")
 axs[1].set_ylabel("Relative L2 Loss")
 axs[1].legend()
+plt.savefig(figures / "runtime_loss.png")
+plt.savefig(figures / "runtime_loss.pdf")

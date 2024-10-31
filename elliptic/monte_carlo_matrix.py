@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[17]:
-
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv, norm
+
+figures = Path(__file__).parent.parent / "figures"
+figures.mkdir(parents=True, exist_ok=True)
 
 
 def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
@@ -95,8 +94,8 @@ def monte_carlo_matrix_inversion(B, epsilon=1e-5, delta=1e-5, max_steps=100):
     return B_inv, l2_losses
 
 
-# Example: Very Simple Test Matrix and Convergence Plot
-def simple_example():
+def simple_example(show: bool=False) -> None:
+    """Very simple test matrix and convergence plot."""
     # Very simple test matrix B
     B = np.array([[2, -1], [-1, 2]])
 
@@ -110,8 +109,12 @@ def simple_example():
     plt.ylabel("L2 Loss")
     plt.title("Convergence of Monte Carlo Matrix Inversion")
     plt.grid(True)
-    plt.show()
+    if show:
+        plt.show()
+    plt.savefig(figures / "monte_carlo.png")
+    plt.savefig(figures / "monte_carlo.pdf")
 
 
-# Run the simple example
-simple_example()
+if __name__ == "__main__":
+    # Run the simple example
+    simple_example()
