@@ -6,6 +6,7 @@ https://surface.syr.edu/cgi/viewcontent.cgi?article=1160&context=eecs_techreport
 """
 
 import time
+from functools import partial
 from pathlib import Path
 
 import jax
@@ -15,7 +16,13 @@ import pandas as pd
 import seaborn as sns
 from jax import random
 
-from elliptic import gauss_seidel, jacobi
+from elliptic import gauss_seidel, jacobi, walk_on_spheres
+from elliptic.pde_utils import (
+    boundary_function,
+    boundary_polylines,
+    grid,
+    wos_domain,
+)
 from elliptic.utils import initialize_solution, relative_l2_loss
 
 # enable int64/float64
@@ -33,6 +40,20 @@ if __name__ == "__main__":
     boundaries = jnp.array([0, 0, 100, 0])  # [top, bottom, left, right]
     solution = initialize_solution(n, boundaries)
 
+    rng, subkey = random.split(rng)
+    m = n + 2
+    points = grid(m * m)
+    g = boundary_function(boundaries)
+    boundary_dirichlet = boundary_polylines()
+    wos = partial(
+        wos_domain,
+        x=points,
+        boundary_dirichlet=boundary_dirichlet,
+        g=g,
+        eps=1e-4,
+    )
+    wos_solution = wos(subkey, n_walks=100)
+
     # run Gauss-Seidel
     solution = gauss_seidel(solution, n_iters)
 
@@ -45,22 +66,41 @@ if __name__ == "__main__":
     ax.figure.savefig(figures / "pde.pdf")  # pyright: ignore
     ax.figure.clear()  # pyright: ignore
 
+    fig, ax = plt.subplots()
+    ax = sns.heatmap(
+        data=wos_solution,
+        xticklabels=False,
+        yticklabels=False,
+        cmap="viridis",
+        ax=ax,
+    )
+    ax.figure.savefig(figures / "wos_pde.png")  # pyright: ignore
+    ax.figure.savefig(figures / "wos_pde.pdf")  # pyright: ignore
+    ax.figure.clear()  # pyright: ignore
+
     # experiment with runtimes and accuracies
 
     data = {"iterations": [], "runtime": [], "accuracy": [], "method": []}
     methods = [
-        ("Jacobi", jacobi),
-        ("Gauss-Seidel", gauss_seidel),
+        ("Jacobi", lambda _, x, n_iters: jacobi(x, n_iters)),
+        ("Gauss-Seidel", lambda _, x, n_iters: gauss_seidel(x, n_iters)),
+        ("WoS", lambda rng, _, n_iters: wos(rng, n_walks=n_iters // 50)),
     ]
 
     iterations = 100 * 2 ** jnp.arange(6)
-    for n_iters in iterations:
+    for i, n_iters in enumerate(iterations):
         for method_name, method in methods:
             solution = initialize_solution(n, boundaries)
+            rng, subkey = random.split(rng)
             # remove jit compilation
-            method(jnp.copy(solution), n_iters).block_until_ready()
+            if i == 0:
+                jnp.array(
+                    method(subkey, jnp.copy(solution), n_iters)
+                ).block_until_ready()
             tic = time.time()
-            solution = method(solution, n_iters).block_until_ready()
+            solution = jnp.array(
+                method(subkey, solution, n_iters)
+            ).block_until_ready()
             toc = time.time()
             data["iterations"].append(int(n_iters))
             data["runtime"].append(toc - tic)
