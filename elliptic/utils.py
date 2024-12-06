@@ -1,7 +1,7 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import Array, jit, lax
+from jax import Array, jit
 
 
 @jit
@@ -21,75 +21,9 @@ def relative_l2_loss(solution: Array, solution_ref: Array) -> Array:
     return relative_l2_loss
 
 
-@partial(jit, static_argnums=0)
-def initialize_solution(n: int, boundaries: Array | None = None) -> Array:
-    """
-    Initialize the solution matrix with the boundary values.
-
-    Args:
-        n: number of grid points in each direction
-        boundaries: list of boundary values [top, bottom, left, right]
-    Returns:
-        solution: initialized solution matrix
-    """
-    if boundaries is None:
-        boundaries = jnp.zeros(4)
-    mean_value = jnp.mean(boundaries)
-    # n + 2 to include the boundary values
-    solution = mean_value * jnp.ones((n + 2, n + 2))
-
-    # set the boundary values
-    solution = solution.at[0, :].set(boundaries[0])  # top
-    solution = solution.at[-1, :].set(boundaries[1])  # bottom
-    solution = solution.at[:, 0].set(boundaries[2])  # left
-    solution = solution.at[:, -1].set(boundaries[3])  # right
-
-    return solution
-
-
-@partial(jit, donate_argnums=0)
-def jacobi(x: Array, n_iters: int = 1) -> Array:
-    """Jacobi method for solving an elliptic PDE."""
-    n, m = x.shape
-
-    def body_fun(_: int, x: Array) -> Array:
-        """Inner loop of the Jacobi method."""
-        return lax.fori_loop(
-            1,
-            n - 1,
-            lambda i, xp: lax.fori_loop(
-                1,
-                m - 1,
-                lambda j, xp: xp.at[i, j].set(
-                    (x[i - 1, j] + x[i + 1, j] + x[i, j - 1] + x[i, j + 1]) / 4
-                ),
-                xp,
-            ),
-            x,
-        )
-
-    return lax.fori_loop(0, n_iters, body_fun, x)
-
-
-@partial(jit, donate_argnums=0)
-def gauss_seidel(x: Array, n_iters: int = 1) -> Array:
-    """Gauss-Seidel method for solving an elliptic PDE."""
-    n, m = x.shape
-
-    def body_fun(_: int, x: Array) -> Array:
-        """Inner loop of the Gauss-Seidel method."""
-        return lax.fori_loop(
-            1,
-            n - 1,
-            lambda i, x: lax.fori_loop(
-                1,
-                m - 1,
-                lambda j, x: x.at[i, j].set(
-                    (x[i - 1, j] + x[i + 1, j] + x[i, j - 1] + x[i, j + 1]) / 4
-                ),
-                x,
-            ),
-            x,
-        )
-
-    return lax.fori_loop(0, n_iters, body_fun, x)
+@partial(jit, static_argnums=(0, 3))
+def grid(n: int, a: float = 0, b: float = 1, d: int = 2) -> Array:
+    """Generate n points evenly spaced in a [a, b]^d hypercube."""
+    spaced = jnp.linspace(a, b, round(n ** (1 / d)))
+    cube = (spaced,) * d
+    return jnp.stack(jnp.meshgrid(*cube), axis=-1).reshape(-1, d)
