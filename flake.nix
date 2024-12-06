@@ -16,7 +16,7 @@
         python' = pkgs.python3.withPackages (ps: with ps; [
           jax
           jaxlib
-          notebook
+          jupyter
           pycairo
           seaborn
         ]);
