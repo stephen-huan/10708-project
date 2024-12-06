@@ -14,6 +14,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         python' = pkgs.python3.withPackages (ps: with ps; [
+          fenics
           jax
           jaxlib
           jupyter
@@ -50,10 +51,8 @@
           installPhase = "touch $out";
         };
 
-        devShells.${system}.default = (pkgs.mkShellNoCC.override {
-          stdenv = pkgs.stdenvNoCC.override {
-            initialPath = [ pkgs.coreutils ];
-          };
+        devShells.${system}.default = (pkgs.mkShell.override {
+          stdenv = pkgs.clangStdenv;
         }) {
           packages = [
             python'
