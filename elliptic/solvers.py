@@ -9,8 +9,13 @@ from .WoS import walk_on_spheres
 KeyArray = Array
 
 
+def _update(x: Array, i: Array, j: Array) -> Array:
+    """Core update of finite difference methods."""
+    return (x[i - 1, j] + x[i + 1, j] + x[i, j - 1] + x[i, j + 1]) / 4
+
+
 @partial(jit, donate_argnums=0)
-def jacobi(x: Array, n_iters: int = 1) -> Array:
+def jacobi(x: Array, n_iters: int = 1, mask: Array | None = None) -> Array:
     """Jacobi method for solving an elliptic PDE."""
     n, m = x.shape
 
@@ -23,7 +28,9 @@ def jacobi(x: Array, n_iters: int = 1) -> Array:
                 1,
                 m - 1,
                 lambda j, xp: xp.at[i, j].set(
-                    (x[i - 1, j] + x[i + 1, j] + x[i, j - 1] + x[i, j + 1]) / 4
+                    _update(x, i, j)
+                    if mask is None
+                    else jnp.where(mask[i, j], _update(x, i, j), xp[i, j])
                 ),
                 xp,
             ),
@@ -34,7 +41,9 @@ def jacobi(x: Array, n_iters: int = 1) -> Array:
 
 
 @partial(jit, donate_argnums=0)
-def gauss_seidel(x: Array, n_iters: int = 1) -> Array:
+def gauss_seidel(
+    x: Array, n_iters: int = 1, mask: Array | None = None
+) -> Array:
     """Gauss-Seidel method for solving an elliptic PDE."""
     n, m = x.shape
 
@@ -47,7 +56,9 @@ def gauss_seidel(x: Array, n_iters: int = 1) -> Array:
                 1,
                 m - 1,
                 lambda j, x: x.at[i, j].set(
-                    (x[i - 1, j] + x[i + 1, j] + x[i, j - 1] + x[i, j + 1]) / 4
+                    _update(x, i, j)
+                    if mask is None
+                    else jnp.where(mask[i, j], _update(x, i, j), x[i, j])
                 ),
                 x,
             ),
