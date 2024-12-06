@@ -23,6 +23,50 @@
         ]);
         formatters = [ pkgs.black pkgs.isort pkgs.nixpkgs-fmt ];
         linters = [ pkgs.pyright pkgs.ruff pkgs.statix ];
+        # pkgs/build-support/build-fhsenv-bubblewrap/buildFHSEnv.nix
+        etcFishConfig = pkgs.writeText "config.fish" ''
+          # >>> mamba initialize >>>
+          # !! Contents within this block are managed by 'mamba init' !!
+          set -gx MAMBA_EXE "micromamba"
+          set -gx MAMBA_ROOT_PREFIX "$HOME/micromamba"
+          $MAMBA_EXE shell hook --shell fish \
+            --root-prefix $MAMBA_ROOT_PREFIX | source
+          # <<< mamba initialize <<<
+        '';
+        etcFishPkg = pkgs.runCommandLocal "fish-chrootenv-etc" { } ''
+          mkdir -p $out/etc/fish
+          pushd $out/etc/fish
+
+          ln -s ${etcFishConfig} config.fish
+        '';
+        # https://nixos.wiki/wiki/Python#micromamba
+        # https://discourse.nixos.org/t/nix-shell-with-micromamba-and-fhs/25464
+        fhs = pkgs.buildFHSEnv {
+          name = "micromamba";
+
+          targetPkgs = pkgs: (with pkgs; [
+            etcFishPkg
+            fish
+            micromamba
+          ]);
+
+          profile = ''
+            set -e
+            # prevent leaking nix dependencies
+            export PYTHONPATH=
+            # make sure prompt fits on the line
+            export MAMBA_ENV_PROMPT='"({name}) "'
+            eval "$(micromamba shell hook --shell posix)"
+            venv='./.venv'
+            if test -d "$venv"; then
+              micromamba activate "$venv"
+            fi
+            set +e
+          '';
+
+          runScript = "fish";
+        };
+        fhs-shell = "${fhs}/bin/${fhs.name}";
       in
       {
         formatter.${system} = pkgs.writeShellApplication {
@@ -49,6 +93,13 @@
             statix check
           '';
           installPhase = "touch $out";
+        };
+
+        apps.${system} = {
+          default = {
+            type = "app";
+            program = fhs-shell;
+          };
         };
 
         devShells.${system}.default = (pkgs.mkShell.override {
