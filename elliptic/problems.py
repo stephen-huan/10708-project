@@ -2,7 +2,7 @@ from collections.abc import Callable
 from functools import partial
 
 import jax.numpy as jnp
-from jax import Array, jit
+from jax import Array, jit, lax
 from jax.tree_util import Partial
 
 from .WoS_utils import distance_polylines_index
