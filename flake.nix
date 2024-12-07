@@ -20,6 +20,7 @@
           jupyter
           pycairo
           seaborn
+          tqdm
         ]);
         formatters = [ pkgs.black pkgs.isort pkgs.nixpkgs-fmt ];
         linters = [ pkgs.pyright pkgs.ruff pkgs.statix ];
