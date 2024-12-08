@@ -2,6 +2,7 @@ from collections.abc import Callable
 from functools import partial
 
 import jax.numpy as jnp
+import numpy as np
 from jax import Array, jit, lax, random, vmap
 from scipy.sparse.linalg import LinearOperator, cg
 
