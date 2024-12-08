@@ -8,8 +8,8 @@ dependencies:
   - jax
   - mshr
   - numpy
+  - pytorch
   - scipy
   - seaborn
   - shapely
-  - torch
   - tqdm
