@@ -20,6 +20,7 @@
           jupyter
           pycairo
           seaborn
+          shapely
           tqdm
         ]);
         formatters = [ pkgs.black pkgs.isort pkgs.nixpkgs-fmt ];
