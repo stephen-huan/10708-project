@@ -21,6 +21,7 @@
           pycairo
           seaborn
           shapely
+          torch
           tqdm
         ]);
         formatters = [ pkgs.black pkgs.isort pkgs.nixpkgs-fmt ];
