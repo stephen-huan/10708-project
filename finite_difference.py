@@ -15,8 +15,9 @@ figures.mkdir(parents=True, exist_ok=True)
 if __name__ == "__main__":
     iters = 2000
 
-    for problem, name in problems:
-        x, mask = problem if isinstance(problem, tuple) else (problem, None)
-        plot_matrix(x, path=figures / f"{name}_init.png")
+    for problem in problems:
+        x = initialize_solution(problem=problem)
+        x, mask = x if isinstance(x, tuple) else (x, None)
+        plot_matrix(x, path=figures / f"{problem}_init.png")
         solution = gauss_seidel(x, n_iters=iters, mask=mask)
-        plot_matrix(solution, path=figures / f"{name}_solution.png")
+        plot_matrix(solution, path=figures / f"{problem}_solution.png")

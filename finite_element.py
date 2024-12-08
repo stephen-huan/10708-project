@@ -11,9 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from dolfin import Function
 
-from elliptic.fem import get_matrix
 from elliptic.plotting import plot_dolfin
-from elliptic.problems import problems
+from elliptic.problems import get_matrix, problems
 from elliptic.solvers import conjugate_gradient, conjugate_residual
 
 figures = Path(__file__).parent / "figures" / "fem"
@@ -23,8 +22,8 @@ cg = False
 save = False
 
 if __name__ == "__main__":
-    for _, name in problems:
-        A, L, V, mesh = get_matrix(problem=name, n=20, res=10, save=save)
+    for problem in problems:
+        A, L, V, mesh = get_matrix(problem=problem, n=20, res=10, save=save)
 
         # either sparse or regular solve
         # u_np = scipy.linalg.solve(A, L)
@@ -36,14 +35,14 @@ if __name__ == "__main__":
         print(max(u_np), min(u_np))
 
         plt.imshow(A.todense())
-        plt.savefig(figures / f"{name}_Ak.png")
+        plt.savefig(figures / f"{problem}_Ak.png")
         plt.clf()
 
         plt.imshow(np.expand_dims(L, axis=1), aspect="auto")
-        plt.savefig(figures / f"{name}_L.png")
+        plt.savefig(figures / f"{problem}_L.png")
         plt.clf()
 
-        plot_dolfin(mesh, path=figures / f"{name}_mesh.png")  # pyright: ignore
+        plot_dolfin(mesh, path=figures / f"{problem}_mesh.png")
 
         # defines function on Mesh Space V
         u = Function(V)
@@ -56,4 +55,4 @@ if __name__ == "__main__":
             + f"size of unodalVals: {u_np.shape}"
         )
 
-        plot_dolfin(u, path=figures / f"{name}_solution.png")
+        plot_dolfin(u, path=figures / f"{problem}_solution.png")
