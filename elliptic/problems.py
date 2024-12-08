@@ -209,12 +209,12 @@ problems = [
         initialize_solution_square(100, boundaries=jnp.array([0, 0, 100, 0])),
         "square",
     ),
-    (
-        initialize_solution_rectangle(
-            100, 10, boundaries=jnp.array([0, 50, 100, 0])
-        ),
-        "rectangle",
-    ),
+    # (
+    #     initialize_solution_rectangle(
+    #         100, 10, boundaries=jnp.array([0, 50, 100, 0])
+    #     ),
+    #     "rectangle",
+    # ),
     (
         initialize_solution_circle(
             100, 100, boundaries=jnp.array([0, 100]), eps=55
