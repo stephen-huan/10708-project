@@ -9,16 +9,17 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy
 from dolfin import Function
 
 from elliptic.fem import get_matrix
 from elliptic.plotting import plot_dolfin
 from elliptic.problems import problems
+from elliptic.solvers import conjugate_gradient, conjugate_residual
 
 figures = Path(__file__).parent / "figures" / "fem"
 figures.mkdir(parents=True, exist_ok=True)
 
+cg = False
 save = False
 
 if __name__ == "__main__":
@@ -27,7 +28,11 @@ if __name__ == "__main__":
 
         # either sparse or regular solve
         # u_np = scipy.linalg.solve(A, L)
-        u_np = scipy.sparse.linalg.spsolve(A, L)
+        # u_np = scipy.sparse.linalg.spsolve(A, L)
+        if cg:
+            u_np, _ = conjugate_gradient(A, L, maxiter=300)
+        else:
+            u_np, _ = conjugate_residual(A, L, maxiter=300)
         print(max(u_np), min(u_np))
 
         plt.imshow(A.todense())
