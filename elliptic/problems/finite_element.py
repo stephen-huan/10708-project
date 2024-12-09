@@ -74,9 +74,26 @@ def get_matrix(
         # grabs points that are on circuference and below x-axis
         return r > 1.0 - eps and r < 1.0 + eps and x[1] < 0.0
 
+    # U boundaries
+
+    def U_boundary_left(x):
+        return x[0] > 0.25 - eps and x[0] < 0.25 + eps and x[1] > 0.25
+
+    def U_boundary_right(x):
+        return x[0] > 0.75 - eps and x[0] < 0.75 + eps and x[1] > 0.25
+
+    def U_boundary_bottom(x):
+        return (
+            x[1] > 0.25 - eps
+            and x[1] < 0.25 + eps
+            and x[0] > 0.25
+            and x[0] < 0.75
+        )
+
     # Define boundary condition
     u0 = Constant(0.0)
     uboundary = Constant(100.0)
+    uboundary_half = Constant(50.0)
 
     if problem == "square":
         bc_left = DirichletBC(V, uboundary, left_boundary)
@@ -89,11 +106,22 @@ def get_matrix(
         bc_bottom = DirichletBC(V, u0, bottom_circumference_boundary)
         bcs = [bc_top, bc_bottom]
     elif problem == "ushape":
-        bc_left = DirichletBC(V, u0, left_boundary)
+        bc_left = DirichletBC(V, uboundary, left_boundary)
         bc_right = DirichletBC(V, u0, right_boundary)
-        bc_top = DirichletBC(V, uboundary, top_boundary)
-        bc_bottom = DirichletBC(V, uboundary, bottom_boundary)
-        bcs = [bc_left, bc_right, bc_top, bc_bottom]
+        bc_top = DirichletBC(V, u0, top_boundary)
+        bc_bottom = DirichletBC(V, uboundary_half, bottom_boundary)
+        bc_Uleft = DirichletBC(V, u0, U_boundary_left)
+        bc_Uright = DirichletBC(V, u0, U_boundary_right)
+        bc_Ubottom = DirichletBC(V, u0, U_boundary_bottom)
+        bcs = [
+            bc_Uleft,
+            bc_Uright,
+            bc_Ubottom,
+            bc_left,
+            bc_right,
+            bc_top,
+            bc_bottom,
+        ]
 
     # Define variational problem
     u = TrialFunction(V)
