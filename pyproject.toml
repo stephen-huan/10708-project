@@ -1,5 +1,5 @@
 [tool.pyright]
-exclude = [".direnv"]
+exclude = [".direnv", ".venv"]
 root = "."
 
 [tool.ruff]

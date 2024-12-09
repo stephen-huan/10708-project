@@ -1,11 +1,7 @@
-from collections.abc import Callable
 from functools import partial
 
 import jax.numpy as jnp
 from jax import Array, jit, lax
-from jax.tree_util import Partial
-
-from .WoS_utils import distance_polylines_index
 
 EMPTY = jnp.nan  # empty value
 
@@ -179,52 +175,23 @@ def initialize_solution_circle(
     return lax.fori_loop(0, ny, body_fun, (solution, mask))
 
 
-@jit
-def boundary_polylines() -> Array:
-    """Return the polylines defining the unit square."""
-    # counterclockwise orientation
-    return jnp.array(
-        [[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]]
-    )
-
-
-def boundary_function(boundaries: Array) -> Callable[[Array], Array]:
-    """Turn the boundary values into a function."""
-    # [bottom, right, top, left]
-    boundary_dirichlet = boundary_polylines()
-    # [top, bottom, left, right]
-    index = jnp.array([1, 3, 0, 2])
-
-    @jit
-    def g(x: Array) -> Array:
-        """Boundary value function."""
-        _, (_, j) = distance_polylines_index(x, boundary_dirichlet)
-        return boundaries[index[j]]
-
-    return Partial(g)
-
-
-problems = [
-    (
-        initialize_solution_square(100, boundaries=jnp.array([0, 0, 100, 0])),
-        "square",
-    ),
-    # (
-    #     initialize_solution_rectangle(
-    #         100, 10, boundaries=jnp.array([0, 50, 100, 0])
-    #     ),
-    #     "rectangle",
-    # ),
-    (
-        initialize_solution_circle(
-            100, 100, boundaries=jnp.array([0, 100]), eps=55
-        ),
-        "circle",
-    ),
-    (
-        initialize_solution_ushape(
-            100, 100, boundaries=jnp.array([0, 50, 100, 0])
-        ),
-        "ushape",
-    ),
-]
+def initialize_solution(problem: str, n: int = 100, m: int = 10) -> Array:
+    """Get the initial finite difference solution."""
+    if problem == "square":
+        return initialize_solution_square(
+            n, boundaries=jnp.array([0, 0, 100, 0])
+        )
+    elif problem == "rectangle":
+        return initialize_solution_rectangle(
+            n, m, boundaries=jnp.array([0, 50, 100, 0])
+        )
+    elif problem == "circle":
+        return initialize_solution_circle(
+            n, n, boundaries=jnp.array([0, 100]), eps=55
+        )
+    elif problem == "ushape":
+        return initialize_solution_ushape(
+            n, n, boundaries=jnp.array([0, 50, 100, 0])
+        )
+    else:
+        raise ValueError(f"Invalid problem geometry {problem}.")
