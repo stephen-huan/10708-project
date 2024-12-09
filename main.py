@@ -101,6 +101,12 @@ if __name__ == "__main__":
                     A, L, maxiter=n_iters
                 )[0],
             ),
+            (
+                "hybrid",
+                lambda rng, _, n_iters: hybrid_wos(
+                    rng, problem, A, L, points, n_iters
+                ),
+            ),
         ]
 
         iterations = 100 * 2 ** jnp.arange(6)
