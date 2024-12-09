@@ -5,6 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array, jit, lax, random, vmap
 from jax.tree_util import Partial
+from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator, cg
 
 from .problems import boundary_function, boundary_polylines
@@ -79,7 +80,7 @@ def _conjugate_residual(
     *,
     rtol: float = 1e-5,
     maxiter: int | float | None = None,
-    M: np.ndarray | LinearOperator | None = None
+    M: np.ndarray | LinearOperator | None = None,
 ) -> tuple[np.ndarray, list]:
     """Conjugate residual with residual tracking"""
     if maxiter is None:
@@ -120,10 +121,16 @@ def _conjugate_residual(
 
 
 def conjugate_residual(
-    A, b, *, maxiter: int, hermitian: bool = False
+    A,
+    b,
+    *,
+    maxiter: int,
+    hermitian: bool = False,
+    x0: np.ndarray | None = None,
 ) -> tuple[np.ndarray, list[np.ndarray]]:
     """Conjugate residual method."""
-    x0 = np.zeros_like(b)
+    if x0 is None:
+        x0 = np.zeros_like(b)
     if hermitian:
         B_diag = np.reciprocal(np.diagonal(A))
         B = A
@@ -137,10 +144,16 @@ def conjugate_residual(
 
 
 def conjugate_gradient(
-    A, b, *, maxiter: int, hermitian: bool = False
+    A,
+    b,
+    *,
+    maxiter: int,
+    hermitian: bool = False,
+    x0: np.ndarray | None = None,
 ) -> tuple[np.ndarray, list[np.ndarray]]:
     """Conjugate gradient method."""
-    x0 = np.zeros_like(b)
+    if x0 is None:
+        x0 = np.zeros_like(b)
     if hermitian:
         B_diag = np.reciprocal(np.diagonal(A))
         B = A
@@ -208,3 +221,36 @@ def wos(
             walk_on_spheres if problem != "circle" else sphere_walk_on_spheres
         ),
     )
+
+
+def hybrid_wos(
+    rng: KeyArray,
+    problem: str,
+    A: csr_array,
+    b: np.ndarray,
+    x: Array,
+    n_iters: int = 1000,
+    max_steps: float | Array = jnp.inf,
+    eps: float | Array = 1e-6,
+    wos_variance: float = 1,
+):
+    """Run walk on spheres on an entire domain."""
+    # roughly balance runtime
+    maxiter = max(int(n_iters * 7 / 8), 1)
+    n_walks = max((n_iters - maxiter) // 50, 1)
+    wos_solution = wos_domain(
+        rng,
+        x,
+        boundary_polylines(problem),
+        boundary_function(problem),
+        n_walks=n_walks,
+        max_steps=max_steps,
+        eps=eps,
+        walk_on_spheres=Partial(
+            walk_on_spheres if problem != "circle" else sphere_walk_on_spheres
+        ),
+    )
+    var = n_walks / wos_variance
+    cr_solution, _ = conjugate_gradient(A, b, maxiter=maxiter, x0=wos_solution)
+    mse = np.reciprocal(np.sum(jnp.square(b - A @ cr_solution)))
+    return (mse * cr_solution + var * wos_solution) / (mse + var)
