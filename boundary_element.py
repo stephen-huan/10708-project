@@ -34,8 +34,6 @@ if __name__ == "__main__":
             values = wos_sphere(
                 subkey, points, boundary_dirichlet, g, n_walks=100
             )
-        print(values)
-        print(points)
 
         plot_mesh(
             problem, values, points, path=figures / f"{problem}_solution.png"
