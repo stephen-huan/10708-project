@@ -6,15 +6,18 @@ Graphical Models](https://andrejristeski.github.io/10708S24/).
 
 ## Requirements
 
+- fenics
 - jax
+- mshr
+- numpy
+- scipy
 - seaborn
-- pycairo (optional, to generate PDFs)
+- shapely
+- torch
+
+See `environment.yml` for a conda environment.
 
 ## Running
-
-```console
-python monte_carlo.py
-```
 
 ```console
 python main.py
@@ -22,5 +25,14 @@ python main.py
 
 ## Experimental results
 
-![runtime of implemented methods](./figures/runtime.png)
-![accuracy of implemented methods](./figures/loss.png)
+Square geometry
+
+![accuracy of implemented methods](./figures/square_loss.png)
+
+Circle geometry
+
+![accuracy of implemented methods](./figures/circle_loss.png)
+
+"U-shape" geometry
+
+![accuracy of implemented methods](./figures/ushape_loss.png)
