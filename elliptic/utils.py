@@ -1,7 +1,7 @@
 from functools import partial
 
 import jax.numpy as jnp
-from jax import Array, jit
+from jax import Array, jit, vmap
 
 
 @jit
@@ -27,3 +27,15 @@ def grid(n: int, a: float = 0, b: float = 1, d: int = 2) -> Array:
     spaced = jnp.linspace(a, b, round(n ** (1 / d)))
     cube = (spaced,) * d
     return jnp.stack(jnp.meshgrid(*cube), axis=-1).reshape(-1, d)
+
+
+@jit
+def _get_closest(x: Array, points: Array, values: Array) -> Array:
+    """Get the value corresponding to the closest point to x."""
+    return values[jnp.argmin(jnp.sum(jnp.square(points - x), axis=1))]
+
+
+@jit
+def closest_values(x: Array, points: Array, values: Array) -> Array:
+    """Get the value corresponding to the closest point to x."""
+    return vmap(partial(_get_closest, points=points, values=values))(x)
