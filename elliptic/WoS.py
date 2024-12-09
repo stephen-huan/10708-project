@@ -45,3 +45,38 @@ def walk_on_spheres(
     return (
         lax.fori_loop(0, n_walks, body_fun, (rng, jnp.zeros(())))[1] / n_walks
     )
+
+
+@jit
+def sphere_walk_on_spheres(
+    rng: KeyArray,
+    x: Array,
+    radius: Array,
+    g: Callable[[Array], Array],
+    n_walks: int = 1000,
+    max_steps: float | Array = jnp.inf,
+    eps: float | Array = 1e-6,
+) -> Array:
+    """The walk on spheres (WoS) algorithm on a sphere."""
+    d = x.shape[0]
+
+    def body_fun(_, state: tuple[KeyArray, Array]) -> tuple[KeyArray, Array]:
+        """Inner loop of the WoS algorithm."""
+        rng, value = state
+        rng, xp, _ = lax.while_loop(
+            lambda state: (radius - jnp.linalg.vector_norm(state[1]) > eps)
+            & (state[2] < max_steps),
+            lambda state: (
+                random.split(state[0])[0],
+                state[1]
+                + (radius - jnp.linalg.vector_norm(state[1]))
+                * sphere(random.split(state[0])[1], d),
+                state[2] + 1,
+            ),
+            (rng, x, 0),
+        )
+        return rng, value + g(xp)
+
+    return (
+        lax.fori_loop(0, n_walks, body_fun, (rng, jnp.zeros(())))[1] / n_walks
+    )

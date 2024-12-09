@@ -6,7 +6,7 @@ import numpy as np
 from jax import Array, jit, lax, random, vmap
 from scipy.sparse.linalg import LinearOperator, cg
 
-from .WoS import walk_on_spheres
+from .WoS import walk_on_spheres, sphere_walk_on_spheres
 
 KeyArray = Array
 
@@ -180,7 +180,28 @@ def wos_domain(
         max_steps=max_steps,
         eps=eps,
     )
-    n, d = x.shape
-    m = round(n ** (1 / d))
     subkeys = random.split(rng, num=x.shape[0])
-    return vmap(wos)(subkeys, x).reshape((m,) * d)
+    return vmap(wos)(subkeys, x)
+
+
+@jit
+def wos_sphere(
+    rng: KeyArray,
+    x: Array,
+    radius: Array,
+    g: Callable[[Array], Array],
+    n_walks: int = 1000,
+    max_steps: float | Array = jnp.inf,
+    eps: float | Array = 1e-6,
+):
+    """Run walk on spheres on an entire domain."""
+    wos = partial(
+        sphere_walk_on_spheres,
+        radius=radius,
+        g=g,
+        n_walks=n_walks,
+        max_steps=max_steps,
+        eps=eps,
+    )
+    subkeys = random.split(rng, num=x.shape[0])
+    return vmap(wos)(subkeys, x)
