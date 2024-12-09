@@ -5,7 +5,7 @@ Testing FD Methods (Gauss-Seidel/Jacobi) on Different Shapes
 from pathlib import Path
 
 from elliptic.plotting import plot_matrix
-from elliptic.problems import problems
+from elliptic.problems import problems, initialize_solution
 from elliptic.solvers import gauss_seidel
 
 figures = Path(__file__).parent / "figures" / "fd"

@@ -23,7 +23,7 @@ save = False
 
 if __name__ == "__main__":
     for problem in problems:
-        A, L, V, mesh = get_matrix(problem=problem, n=20, res=10, save=save)
+        A, L, V, mesh = get_matrix(problem=problem, n=20, res=25, save=save)
 
         # either sparse or regular solve
         # u_np = scipy.linalg.solve(A, L)
