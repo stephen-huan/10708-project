@@ -22,6 +22,7 @@ from elliptic.solvers import (
     conjugate_gradient,
     conjugate_residual,
     gauss_seidel,
+    hybrid_wos,
     jacobi,
     wos,
 )
