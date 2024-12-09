@@ -85,17 +85,17 @@ def initialize_solution_ushape(
     mean_value = jnp.mean(boundaries)
     # n + 2 to include the boundary values
     solution = mean_value * jnp.ones((ny + 2, nx + 2))
-    mask = jnp.ones((ny + 2, nx + 2))
+    mask = jnp.ones((ny + 2, nx + 2), dtype=jnp.bool_)
 
     # set the boundary values
     solution = solution.at[0, :].set(boundaries[0])  # top
-    mask = mask.at[0, :].set(0)
+    mask = mask.at[0, :].set(False)
     solution = solution.at[-1, :].set(boundaries[1])  # bottom
-    mask = mask.at[-1, :].set(0)
+    mask = mask.at[-1, :].set(False)
     solution = solution.at[:, 0].set(boundaries[2])  # left
-    mask = mask.at[:, 0].set(0)
+    mask = mask.at[:, 0].set(False)
     solution = solution.at[:, -1].set(boundaries[3])  # right
-    mask = mask.at[:, -1].set(0)
+    mask = mask.at[:, -1].set(False)
 
     # set the U shape
     neck_yend = round(3 * ny / 4)
@@ -103,13 +103,13 @@ def initialize_solution_ushape(
     neck_xend = round(3 * nx / 4)
 
     solution = solution.at[:neck_yend, neck_xstart:neck_xend].set(EMPTY)
-    mask = mask.at[:neck_yend, neck_xstart:neck_xend].set(0)
-    solution = solution.at[:neck_yend, neck_xstart].set(0)
-    mask = mask.at[:neck_yend, neck_xstart].set(0)
-    solution = solution.at[:neck_yend, neck_xend].set(0)
-    mask = mask.at[:neck_yend, neck_xend].set(0)
-    solution = solution.at[neck_yend, neck_xstart : neck_xend + 1].set(0)
-    mask = mask.at[neck_yend, neck_xstart : neck_xend + 1].set(0)
+    mask = mask.at[:neck_yend, neck_xstart:neck_xend].set(False)
+    solution = solution.at[:neck_yend, neck_xstart].set(False)
+    mask = mask.at[:neck_yend, neck_xstart].set(False)
+    solution = solution.at[:neck_yend, neck_xend].set(False)
+    mask = mask.at[:neck_yend, neck_xend].set(False)
+    solution = solution.at[neck_yend, neck_xstart : neck_xend + 1].set(False)
+    mask = mask.at[neck_yend, neck_xstart : neck_xend + 1].set(False)
 
     return solution, mask
 
@@ -136,7 +136,7 @@ def initialize_solution_circle(
     mean_value = jnp.mean(boundaries)
 
     solution = mean_value * jnp.ones((ny, nx))
-    mask = jnp.ones((ny, nx))
+    mask = jnp.ones((ny, nx), dtype=jnp.bool_)
 
     center = jnp.array([(nx - 1) / 2, (ny - 1) / 2])
     r2 = jnp.square((nx - 1) / 2)
@@ -160,7 +160,7 @@ def initialize_solution_circle(
                     ),
                     solution,
                 )
-                return solution, mask.at[i, j].set(0)
+                return solution, mask.at[i, j].set(False)
 
             return lax.cond(
                 d2 > r2 - eps,
