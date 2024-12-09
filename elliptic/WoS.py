@@ -51,7 +51,7 @@ def walk_on_spheres(
 def sphere_walk_on_spheres(
     rng: KeyArray,
     x: Array,
-    radius: Array,
+    boundary_dirichlet: Array,
     g: Callable[[Array], Array],
     n_walks: int = 1000,
     max_steps: float | Array = jnp.inf,
@@ -64,12 +64,14 @@ def sphere_walk_on_spheres(
         """Inner loop of the WoS algorithm."""
         rng, value = state
         rng, xp, _ = lax.while_loop(
-            lambda state: (radius - jnp.linalg.vector_norm(state[1]) > eps)
+            lambda state: (
+                boundary_dirichlet - jnp.linalg.vector_norm(state[1]) > eps
+            )
             & (state[2] < max_steps),
             lambda state: (
                 random.split(state[0])[0],
                 state[1]
-                + (radius - jnp.linalg.vector_norm(state[1]))
+                + (boundary_dirichlet - jnp.linalg.vector_norm(state[1]))
                 * sphere(random.split(state[0])[1], d),
                 state[2] + 1,
             ),

@@ -4,9 +4,11 @@ from functools import partial
 import jax.numpy as jnp
 import numpy as np
 from jax import Array, jit, lax, random, vmap
+from jax.tree_util import Partial
 from scipy.sparse.linalg import LinearOperator, cg
 
-from .WoS import walk_on_spheres, sphere_walk_on_spheres
+from .problems import boundary_function, boundary_polylines
+from .WoS import sphere_walk_on_spheres, walk_on_spheres
 
 KeyArray = Array
 
@@ -170,6 +172,7 @@ def wos_domain(
     n_walks: int = 1000,
     max_steps: float | Array = jnp.inf,
     eps: float | Array = 1e-6,
+    walk_on_spheres: Callable = walk_on_spheres,
 ):
     """Run walk on spheres on an entire domain."""
     wos = partial(
@@ -184,24 +187,24 @@ def wos_domain(
     return vmap(wos)(subkeys, x)
 
 
-@jit
-def wos_sphere(
+def wos(
     rng: KeyArray,
+    problem: str,
     x: Array,
-    radius: Array,
-    g: Callable[[Array], Array],
     n_walks: int = 1000,
     max_steps: float | Array = jnp.inf,
     eps: float | Array = 1e-6,
 ):
     """Run walk on spheres on an entire domain."""
-    wos = partial(
-        sphere_walk_on_spheres,
-        radius=radius,
-        g=g,
+    return wos_domain(
+        rng,
+        x,
+        boundary_polylines(problem),
+        boundary_function(problem),
         n_walks=n_walks,
         max_steps=max_steps,
         eps=eps,
+        walk_on_spheres=Partial(
+            walk_on_spheres if problem != "circle" else sphere_walk_on_spheres
+        ),
     )
-    subkeys = random.split(rng, num=x.shape[0])
-    return vmap(wos)(subkeys, x)
